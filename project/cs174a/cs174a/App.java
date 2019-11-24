@@ -97,13 +97,32 @@ public class App implements Testable
 		String sql1 = "CREATE TABLE Owner2 " +
                    "(taxid INTEGER not NULL, " +
                    " name VARCHAR(255), " + 
-		   " pin INTEGER, " + 
-                   " address VARCHAR(255), " + 
-		   " aid INTEGER, " + 
-		   " CONSTRAINT FK_Account FOREIGN KEY (aid) REFERENCES Account(acc_id)," +
+                   " address VARCHAR(255), " +  
                    " PRIMARY KEY ( taxid ))";
+
+		String sql2 = "CREATE TABLE Account2 " +
+                   "(taxid INTEGER not NULL, " +
+                   " name VARCHAR(255), " + 
+		   " type VARCHAR(255), " + 
+		   " status VARCHAR(255), " + 
+		   " balance FLOAT, " +  
+		   " rate FLOAT, " + 
+                   " address VARCHAR(255), " + 
+		   " aid INTEGER not NULL, " + 
+		   " CONSTRAINT FK_PrimaryOwner FOREIGN KEY (taxid) REFERENCES Owner2(taxid) on delete cascade," +
+                   " PRIMARY KEY ( aid ))";
+
+		String sql3 = "CREATE TABLE OwnRelationship " +
+                   "(taxid INTEGER not NULL, " +
+		   " aid INTEGER not NULL, " + 
+		    " pin INTEGER not NULL," + 
+		   " CONSTRAINT FK_Owner FOREIGN KEY (taxid) REFERENCES Owner2(taxid) on delete cascade," +
+		  " CONSTRAINT FK_Account FOREIGN KEY (aid) REFERENCES Account2(aid) on delete cascade," +
+                   " PRIMARY KEY ( taxid, aid ))";   
 		try{stmt = _connection.createStatement();
 			stmt.executeUpdate(sql1);
+			stmt.executeUpdate(sql2);
+			stmt.executeUpdate(sql3);
 			System.out.println("Created Owner2 table");
 			return "0";
 		}catch( SQLException e )
@@ -121,8 +140,13 @@ public class App implements Testable
 	public String dropTables(){
 		Statement stmt = null;
 		String sql1 = "DROP TABLE Owner2 ";
+		String sql2 = "DROP TABLE Account2 ";
+		String sql3 = "DROP TABLE OwnRelationship ";
 		try{stmt = _connection.createStatement();
+			stmt.executeUpdate(sql3);
+			stmt.executeUpdate(sql2);
 			stmt.executeUpdate(sql1);
+			
 			System.out.println("Dropped Owner2 table");
 			return "0";
 		}catch( SQLException e )
@@ -135,8 +159,65 @@ public class App implements Testable
 
 	}
 
-	
+	@Override
+	public String createCheckingSavingsAccount( AccountType accountType, String id, double initialBalance, String tin, String name, String address ){
+		Statement stmt = null;		
+		if (initialBalance<1000.0||accountType==AccountType.POCKET)
+			return "1";
+		double rate=0;
+		if (accountType==AccountType.INTEREST_CHECKING)
+			rate=3.0;
+		else if (accountType==AccountType.SAVINGS)
+			rate=4.8;
+		
+		String sql1 = "INSERT INTO Account2 " +
+                   "VALUES ("+tin+", '"+name+"', '"+accountType+"', 'OPEN', 1000.1, 4.8, '"+address+"', "+id+")";
+		String sql2 = "INSERT INTO OwnRelationship " +
+                   "VALUES ("+tin+", "+id+", '1717')";
 
+		try{stmt = _connection.createStatement();			
+			//stmt.executeUpdate(sql1);
+			//stmt.executeUpdate(sql2);
+			
+
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+
+		return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
+
+	}
+
+
+	@Override
+	public String createCustomer( String accountId, String tin, String name, String address ){	Statement stmt = null;
+		String sql1 = "INSERT INTO Owner2 " +
+                   "VALUES ("+tin+", '"+name+"', '"+address+"')";
+		String sql2 = "select A.aid from account2 A where A.aid="+accountId+"";
+		String sql3 = "INSERT INTO OwnRelationship " +
+                   "VALUES ("+tin+", "+accountId+", '1717')";
+		try{stmt = _connection.createStatement();			
+			stmt.executeUpdate(sql1);
+			ResultSet rs = stmt.executeQuery(sql2);
+			if (rs.next()){
+				stmt.executeUpdate(sql3);
+			}
+			System.out.println("New Onwer added");
+			return "0";
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}		
+	
+	}
+
+
+		
+	
 
 	/**
 	 * Example of one of the testable functions.
@@ -150,9 +231,5 @@ public class App implements Testable
 	/**
 	 * Another example.
 	 */
-	//@Override
-	public String createCheckingSavingsAccount( AccountType accountType, String id, double initialBalance, String tin, String name, String address )
-	{
-		return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
-	}
+	
 }
