@@ -36,8 +36,11 @@ public class Main
 			r=app.createTables();
 			System.out.println( r );
 			r=app.createCustomer("1234", "1234", "Bob1", "P. Sherman Wollaby, Sydney");
-			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account1", 1234.56, "theTaxID", "Im YoungMing", "Known" );
 			System.out.println( r );
+			r=app.createCustomer("account1","theTaxID", "Bob1", "P. Sherman Wollaby, Sydney");
+			System.out.println( r );
+			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account1", 1234.56, "theTaxID", "Im YoungMing", "Known" );
+			
 			System.out.println( r );
 			r=app.createCheckingSavingsAccount(AccountType.SAVINGS, "1234", 1001.99, "1234", "Bob1", "P. Sherman Wollaby, Sydney");
 			System.out.println( r );

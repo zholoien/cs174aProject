@@ -95,26 +95,26 @@ public class App implements Testable
 	public String createTables(){
 		Statement stmt = null;
 		String sql1 = "CREATE TABLE Owner2 " +
-                   "(taxid INTEGER not NULL, " +
+                   "(taxid VARCHAR(255) not NULL, " +
                    " name VARCHAR(255), " + 
                    " address VARCHAR(255), " +  
                    " PRIMARY KEY ( taxid ))";
 
 		String sql2 = "CREATE TABLE Account2 " +
-                   "(taxid INTEGER not NULL, " +
+                   "(taxid VARCHAR(255) not NULL, " +
                    " name VARCHAR(255), " + 
 		   " type VARCHAR(255), " + 
 		   " status VARCHAR(255), " + 
 		   " balance FLOAT, " +  
 		   " rate FLOAT, " + 
                    " address VARCHAR(255), " + 
-		   " aid INTEGER not NULL, " + 
+		   " aid VARCHAR(255) not NULL, " + 
 		   " CONSTRAINT FK_PrimaryOwner FOREIGN KEY (taxid) REFERENCES Owner2(taxid) on delete cascade," +
                    " PRIMARY KEY ( aid ))";
 
 		String sql3 = "CREATE TABLE OwnRelationship " +
-                   "(taxid INTEGER not NULL, " +
-		   " aid INTEGER not NULL, " + 
+                   "(taxid VARCHAR(255) not NULL, " +
+		   " aid VARCHAR(255) not NULL, " + 
 		    " pin INTEGER not NULL," + 
 		   " CONSTRAINT FK_Owner FOREIGN KEY (taxid) REFERENCES Owner2(taxid) on delete cascade," +
 		  " CONSTRAINT FK_Account FOREIGN KEY (aid) REFERENCES Account2(aid) on delete cascade," +
@@ -171,12 +171,12 @@ public class App implements Testable
 			rate=4.8;
 		
 		String sql1 = "INSERT INTO Account2 " +
-                   "VALUES ("+tin+", '"+name+"', '"+accountType+"', 'OPEN', 1000.1, 4.8, '"+address+"', "+id+")";
+                   "VALUES ('"+tin+"', '"+name+"', '"+accountType+"', 'OPEN',"+ initialBalance+", "+rate+", '"+address+"', '"+id+"')";
 		String sql2 = "INSERT INTO OwnRelationship " +
-                   "VALUES ("+tin+", "+id+", '1717')";
+                   "VALUES ('"+tin+"', '"+id+"', '1717')";
 
 		try{stmt = _connection.createStatement();			
-			//stmt.executeUpdate(sql1);
+			stmt.executeUpdate(sql1);
 			//stmt.executeUpdate(sql2);
 			
 
@@ -195,10 +195,10 @@ public class App implements Testable
 	@Override
 	public String createCustomer( String accountId, String tin, String name, String address ){	Statement stmt = null;
 		String sql1 = "INSERT INTO Owner2 " +
-                   "VALUES ("+tin+", '"+name+"', '"+address+"')";
-		String sql2 = "select A.aid from account2 A where A.aid="+accountId+"";
+                   "VALUES ('"+tin+"', '"+name+"', '"+address+"')";
+		String sql2 = "select A.aid from account2 A where A.aid='"+accountId+"'";
 		String sql3 = "INSERT INTO OwnRelationship " +
-                   "VALUES ("+tin+", "+accountId+", '1717')";
+                   "VALUES ('"+tin+"', '"+accountId+"', '1717')";
 		try{stmt = _connection.createStatement();			
 			stmt.executeUpdate(sql1);
 			ResultSet rs = stmt.executeQuery(sql2);
