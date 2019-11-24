@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.util.Properties;
 import oracle.jdbc.pool.OracleDataSource;
 import oracle.jdbc.OracleConnection;
+import java.util.Formatter;
 
 /**
  * The most important class for your application.
@@ -119,10 +120,31 @@ public class App implements Testable
 		   " CONSTRAINT FK_Owner FOREIGN KEY (taxid) REFERENCES Owner2(taxid) on delete cascade," +
 		  " CONSTRAINT FK_Account FOREIGN KEY (aid) REFERENCES Account2(aid) on delete cascade," +
                    " PRIMARY KEY ( taxid, aid ))";   
+
+		String sql4 = "CREATE TABLE  Pocket2" +
+                   "(taxid VARCHAR(255) not NULL, " +
+                   " status VARCHAR(255), " + 
+		   " balance FLOAT, " +
+		   " parent_aid VARCHAR(255) not NULL, " +  
+		   " aid VARCHAR(255) not NULL, " + 
+		   " CONSTRAINT FK_ParentAccount FOREIGN KEY (parent_aid) REFERENCES Account2(aid) on delete cascade," +
+		   " CONSTRAINT FK_PocketOwner FOREIGN KEY (taxid) REFERENCES Owner2(taxid) on delete cascade," +
+                   " PRIMARY KEY ( aid ))";
+
+		String sql5 = "CREATE TABLE PocketOwn " +
+                   "(taxid VARCHAR(255) not NULL, " +
+		   " aid VARCHAR(255) not NULL, " + 
+		    " pin INTEGER not NULL," + 
+		   " CONSTRAINT FK_PocketOwnerRelationship FOREIGN KEY (taxid) REFERENCES Owner2(taxid) on delete cascade," +
+		  " CONSTRAINT FK_PocketAccount FOREIGN KEY (aid) REFERENCES Pocket2(aid) on delete cascade," +
+                   " PRIMARY KEY ( taxid, aid ))"; 
+
 		try{stmt = _connection.createStatement();
 			stmt.executeUpdate(sql1);
 			stmt.executeUpdate(sql2);
 			stmt.executeUpdate(sql3);
+			stmt.executeUpdate(sql4);
+			stmt.executeUpdate(sql5);
 			System.out.println("Created Owner2 table");
 			return "0";
 		}catch( SQLException e )
@@ -142,7 +164,11 @@ public class App implements Testable
 		String sql1 = "DROP TABLE Owner2 ";
 		String sql2 = "DROP TABLE Account2 ";
 		String sql3 = "DROP TABLE OwnRelationship ";
+		String sql4 = "DROP TABLE Pocket2 ";
+		String sql5 = "DROP TABLE PocketOwn ";
 		try{stmt = _connection.createStatement();
+			stmt.executeUpdate(sql5);
+			stmt.executeUpdate(sql4);
 			stmt.executeUpdate(sql3);
 			stmt.executeUpdate(sql2);
 			stmt.executeUpdate(sql1);
@@ -177,7 +203,7 @@ public class App implements Testable
 
 		try{stmt = _connection.createStatement();			
 			stmt.executeUpdate(sql1);
-			//stmt.executeUpdate(sql2);
+			stmt.executeUpdate(sql2);
 			
 
 		}catch( SQLException e )
@@ -191,6 +217,39 @@ public class App implements Testable
 
 	}
 
+
+	@Override
+	public String createPocketAccount( String id, String linkedId, double initialTopUp, String tin ){
+		Statement stmt = null;	
+		String sql1 = "select R.pin from OwnRelationship R where R.aid='"+linkedId+"' and R.taxid='"+tin+"'";		
+		String sql2= "INSERT INTO Pocket2 " +
+		"VALUES ('"+tin+"', 'OPEN', "+ initialTopUp+", '"+linkedId+"', '"+id+"')";
+		String sql3 = "INSERT INTO PocketOwn " +
+                   "VALUES ('"+tin+"', '"+id+"', '1717')";
+		
+		//TODO: check if initialTopUp<balance
+
+		try{stmt = _connection.createStatement();	
+			ResultSet rs = stmt.executeQuery(sql1);
+			if (rs.next()){
+				stmt.executeUpdate(sql2);
+				System.out.println("Trying to add Pocket Account");
+				stmt.executeUpdate(sql3);
+				return String.format("0 "+id+" POCKET %.2f",initialTopUp);
+			}else{ System.out.println("No matching table");}
+			
+			
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+		//TODO: Call Top Up
+
+
+		return "0";
+	}
 
 	@Override
 	public String createCustomer( String accountId, String tin, String name, String address ){	Statement stmt = null;
