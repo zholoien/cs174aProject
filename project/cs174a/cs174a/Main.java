@@ -44,6 +44,8 @@ public class Main
 			System.out.println( r );
 			r=app.createCheckingSavingsAccount(AccountType.SAVINGS, "1234", 1001.99, "1234", "Bob1", "P. Sherman Wollaby, Sydney");
 			System.out.println( r );
+		        r = app.deposit("1234", 500);
+			System.out.println(r);
 			r=app.dropTables();
 			System.out.println( r );
 		}
