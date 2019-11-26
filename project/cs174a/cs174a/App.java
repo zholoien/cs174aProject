@@ -8,7 +8,11 @@ import java.sql.Statement;
 import java.util.Properties;
 import oracle.jdbc.pool.OracleDataSource;
 import oracle.jdbc.OracleConnection;
+
 import java.util.Formatter;
+
+
+import java.util.Scanner;
 
 /**
  * The most important class for your application.
@@ -121,6 +125,18 @@ public class App implements Testable
 		  " CONSTRAINT FK_Account FOREIGN KEY (aid) REFERENCES Account2(aid) on delete cascade," +
                    " PRIMARY KEY ( taxid, aid ))";   
 
+		String sql4 = "Create Table Transaction2 " +
+            "(account1 Varchar(255) not NULL, " +
+		    "account2 Varchar(255), " +
+		    "trans_type VARCHAR(255) not null, " +
+		    "ownid Varchar(255) not Null, " +
+		    "Amount float not null, " +
+		    "t_date varchar(255) not null, " +
+		    " Constraint FK_acc1 foreign key (account1) references Account2(aid) on delete cascade," +
+		    " Constraint FK_ownT foreign key (ownid) references Owner2(taxid) on delete cascade," +
+		    " Primary Key (account1, t_date, trans_type))";
+
+
 		String sql5 = "CREATE TABLE  Pocket2" +
                    "(taxid VARCHAR(255) not NULL, " +
                    " status VARCHAR(255), " + 
@@ -151,6 +167,7 @@ public class App implements Testable
 			stmt.executeUpdate(sql1);
 			stmt.executeUpdate(sql2);
 			stmt.executeUpdate(sql3);
+			stmt.executeUpdate(sql4);
 			stmt.executeUpdate(sql5);
 			stmt.executeUpdate(sql6);
 			stmt.executeUpdate(sql7);
@@ -171,8 +188,9 @@ public class App implements Testable
 	public String dropTables(){
 		Statement stmt = null;
 		String sql1 = "DROP TABLE Owner2 ";
-		String sql2 = "DROP TABLE Account2 ";
+		String sql2 = "DROP TABLE Account2 "; 
 		String sql3 = "DROP TABLE OwnRelationship ";
+		String sql4 = "DROP TABLE Transaction2 ";
 		String sql5 = "DROP TABLE Pocket2 ";
 		String sql6 = "DROP TABLE PocketOwn ";
 		String sql7 = "DROP TABLE PocketTransaction ";
@@ -180,10 +198,13 @@ public class App implements Testable
 			stmt.executeUpdate(sql7);
 			stmt.executeUpdate(sql6);
 			stmt.executeUpdate(sql5);
+			stmt.executeUpdate(sql4);
 			stmt.executeUpdate(sql3);
 			stmt.executeUpdate(sql2);
 			stmt.executeUpdate(sql1);
-			
+
+		
+		
 			System.out.println("Dropped Owner2 table");
 			return "0";
 		}catch( SQLException e )
@@ -227,6 +248,117 @@ public class App implements Testable
 		return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
 
 	}
+
+    //@Override
+    public String deposit(String accountID, double amount){
+	
+	Statement stmt = null, stmt2 = null, stmt3 = null;
+	float balance = 0, newAmount = 0;
+	boolean flag = true;
+        String sql1 = "Select A.taxid, A.pin from ownRelationship A where A.aid = '" +accountID + "'";
+	String sql4 = "Select A.balance from Account2 A where A.aid = '" +accountID + "'";
+	try{stmt =  _connection.createStatement();
+	    ResultSet sr = stmt.executeQuery(sql4);
+	     if(sr.next()){
+		balance = sr.getFloat("Balance");
+	        
+		}
+	}catch( SQLException e )
+	    {
+			System.err.println( e.getMessage() );
+			flag = false;
+			return "1";
+			    
+	 }
+	
+	 try{ stmt = _connection.createStatement();
+	    ResultSet rs = stmt.executeQuery(sql1);
+	    while(rs.next() && flag){
+		
+		    String pin = rs.getString("pin");
+		    boolean result = checkPin(pin);
+		    
+		    if(result == true){
+			String sql2 = "Insert into Transaction2 " +
+			    "Values ( '" + accountID + "', 'null', 'deposit','" + rs.getString("taxid") + "', '" + amount + "', 'date')";
+			
+			String sql3 = "Update Account2 " +
+			    "set balance = balance +" + amount + 
+			    " where aid = '" + accountID + "'";
+		       
+			try{stmt2 = _connection.createStatement();
+			    stmt2.executeUpdate(sql2);
+			    stmt2.executeUpdate(sql3);
+			    flag = false;
+			}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			flag = false;
+			return "1";
+			    
+		}
+		    }
+		}
+	 }catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+
+		}
+
+
+	String sql5 = "Select A.balance from Account2 A where A.aid = '" +accountID + "'";
+	try{stmt =  _connection.createStatement();
+	    ResultSet sr = stmt.executeQuery(sql4);
+	     if(sr.next()){
+		newAmount = sr.getFloat("Balance");
+	        
+		}
+	}catch( SQLException e )
+	    {
+			System.err.println( e.getMessage() );
+			flag = false;
+			return "1";
+			    
+	 }
+	 return "0 " + balance+ " " + newAmount;
+	
+
+    }
+
+    public boolean checkPin(String pin){
+	Scanner in = new Scanner(System.in);
+	String input = in.nextLine();
+	if(input.equals(pin)){
+	    return true;
+	}
+	else{
+	    return false;
+	}
+    }
+
+    public boolean checkBalance(String aid, float amount){
+	Statement stmt = null;
+	String sql = "Select A.balance from Account2 A where A.aid = '" + aid + "'";
+	try{ stmt = _connection.createStatement();
+	    ResultSet rs = stmt.executeQuery(sql);
+	    if(rs.next()){
+	        float result = rs.getFloat("Balance");
+		if (result < amount){
+		    return false;
+		}
+		else{
+		    return true;
+		}
+		
+	    }
+	}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return false;
+		}
+	return false;
+    }
 
 
 	@Override
@@ -286,6 +418,7 @@ public class App implements Testable
 	
 	}
 
+
 	String getParentAccount(String pocket){
 		String sql="Select P.parent_aid From Pocket2 P Where P.aid ='"+pocket+"'";
 		Statement stmt = null;
@@ -301,6 +434,7 @@ public class App implements Testable
 		}	
 		return "";
 	}
+
 
 		
 	@Override
