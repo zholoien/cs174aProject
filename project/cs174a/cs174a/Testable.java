@@ -111,7 +111,7 @@ interface Testable
 	 *         r = 0 for success, 1 for error; and
 	 *         balance is the account balance, with up to 2 decimal places (e.g. with %.2f).
 	 */
-	//TODO: String showBalance( String accountId );
+	String showBalance( String accountId );
 
 	/**
 	 * Move a specified amount of money from the linked checking/savings account to the pocket account.
@@ -134,7 +134,7 @@ interface Testable
 	 *         fromNewBalance is the new balance of the source pocket account, with up to 2 decimal places (e.g. with %.2f); and
 	 *         toNewBalance is the new balance of destination pocket account, with up to 2 decimal places.
 	 */
-	//TODO: String payFriend( String from, String to, double amount );
+	String payFriend( String from, String to, double amount );
 
 	/**
 	 * Generate list of closed accounts.

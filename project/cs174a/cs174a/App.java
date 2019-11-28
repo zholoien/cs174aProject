@@ -337,7 +337,7 @@ public class App implements Testable
 	}
     }
 
-    public boolean checkBalance(String aid, float amount){
+    public boolean checkBalance(String aid, double amount){
 	Statement stmt = null;
 	String sql = "Select A.balance from Account2 A where A.aid = '" + aid + "'";
 	try{ stmt = _connection.createStatement();
@@ -358,6 +358,124 @@ public class App implements Testable
 			return false;
 		}
 	return false;
+    }
+
+
+    public boolean checkPocketBalance(String aid, double amount){
+        Statement stmt = null;
+        String sql = "Select A.balance from pocket2 A where A.aid = '" + aid + "'";
+        try{ stmt = _connection.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            if(rs.next()){
+                float result = rs.getFloat("Balance");
+                if (result < amount){
+                    return false;
+                }
+                else{
+                    return true;
+                }
+
+            }
+        }catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        return false;
+                }
+        return false;
+    }
+
+    @Override
+    public String showBalance( String accountId ){
+	Statement stmt = null;
+	float balance = 0;
+	String sql1 = "Select A.balance from Account2 A where A.aid = '" +accountId + "'";
+        try{stmt =  _connection.createStatement();
+            ResultSet sr = stmt.executeQuery(sql1);
+             if(sr.next()){
+                balance = sr.getFloat("Balance");
+
+                }
+        }catch( SQLException e )
+            {
+                        System.err.println( e.getMessage() );
+                        return "1";
+
+         }
+	return "0 " + balance;
+    }
+
+
+
+
+    
+
+
+
+
+    public String payFriend( String from, String to, double amount ){
+	Statement stmt = null;
+	float from_balance = 0, to_balance = 0;
+	String pin = "";
+	String sql1 = "select R.pin from pocketOwn R where R.aid='"+from+"'";
+	String sql2 = "Update Pocket2 set balance=balance-"+amount+" where aid='"+from+"'";
+	String sql3 = "Update Pocket2 set balance=balance+"+amount+" where aid='"+to+"'";
+        String sql4 = "Insert INTO PocketTransaction " +
+                   "VALUES ('"+from+"', '"+ to+ "', 'Today', 'pay-friend')";
+        try{stmt = _connection.createStatement();
+                        ResultSet rs = stmt.executeQuery(sql1);
+			if(rs.next()){
+			    pin = rs.getString("pin");
+			}
+	}catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+			return "1";
+                }
+        	
+	if(checkPocketBalance(from, amount)){
+	    if(checkPin(pin)){
+		String sql5 = "SELECT a.balance FROM pocket2 a WHERE a.aid='"+from+"'";
+                try{stmt = _connection.createStatement();
+                        stmt.executeUpdate(sql2);
+                        stmt.executeUpdate(sql3);
+                        stmt.executeUpdate(sql4);
+                        ResultSet rs = stmt.executeQuery(sql5);
+			if(rs.next()){
+			    System.out.println("first account");
+			    from_balance = rs.getFloat("balance");
+			}
+			else{
+			    return "1";
+			}
+		}catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        return "1";
+                }		
+	    }
+	    else{
+		return "1";
+	    }
+	}else{
+	    return "1";
+	}
+	
+	String sql6 = "SELECT p.balance FROM pocket2 p WHERE p.aid ='"+to+"'";
+                try{stmt = _connection.createStatement();
+                        ResultSet rs = stmt.executeQuery(sql6);
+			System.out.println("About to get account2");
+                        if(rs.next()){
+                            to_balance = rs.getFloat("balance");
+                        }
+			else{
+                            return "1";
+			}
+                }catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        return "1";
+                }
+		return String.format("0 %.2f %.2f", from_balance, to_balance);
     }
 
 

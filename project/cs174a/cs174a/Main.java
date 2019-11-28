@@ -45,11 +45,18 @@ public class Main
 			r=app.createCheckingSavingsAccount(AccountType.SAVINGS, "1234", 1001.99, "1234", "Bob1", "P. Sherman Wollaby, Sydney");
 			System.out.println( r );
 
-			r=app.createPocketAccount("1111", "1234", 500.0, "1234");			
+			r=app.createPocketAccount("1111", "1234", 500.0, "1234");
+			r=app.createPocketAccount("theTaxID", "account1", 500.0, "theTaxID");
 			System.out.println( r );			
 
 		        r = app.deposit("1234", 500);
 			System.out.println(r);
+
+			r = app.showBalance("1234");
+                        System.out.println(r);
+
+			r = app.payFriend("theTaxID", "1111", 250);
+                        System.out.println(r);
 
 			r=app.dropTables();
 			System.out.println( r );
