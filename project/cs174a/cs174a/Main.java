@@ -51,12 +51,27 @@ public class Main
 
 		        r = app.deposit("1234", 500);
 			System.out.println(r);
+		
+			r = app.setPin("1234");
+                        System.out.println(r);
+
+
+			r = app.withdrawal("1234", 50);
+                        System.out.println(r);
 
 			r = app.showBalance("1234");
                         System.out.println(r);
 
 			r = app.payFriend("theTaxID", "1111", 250);
                         System.out.println(r);
+
+			r = app.setPocketPin("1111");
+                        System.out.println(r);
+
+
+			r = app.purchase("1111", 50);
+                        System.out.println(r);
+
 
 			r=app.dropTables();
 			System.out.println( r );
