@@ -65,12 +65,15 @@ public class Main
 			r = app.payFriend("theTaxID", "1111", 250);
                         System.out.println(r);
 
-			r = app.setPocketPin("1111");
+			r = app.showBalance("1111");
                         System.out.println(r);
 
+			//r = app.setPocketPin("1111");
+                        //System.out.println(r);
 
-			r = app.purchase("1111", 50);
-                        System.out.println(r);
+
+			//r = app.purchase("1111", 50);
+                        //System.out.println(r);
 
 
 			r=app.dropTables();

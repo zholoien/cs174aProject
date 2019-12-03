@@ -600,7 +600,7 @@ public class App implements Testable
     public String showBalance( String accountId ){
 	Statement stmt = null;
 	float balance = 0;
-	String sql1 = "Select A.balance from Account2 A where A.aid = '" +accountId + "'";
+	String sql1 = "Select A.balance from Account2 A where A.aid = '" +accountId + "'"  + " Union Select B.balance from Pocket2 B where B.aid = '" + accountId + "'";
         try{stmt =  _connection.createStatement();
             ResultSet sr = stmt.executeQuery(sql1);
              if(sr.next()){
@@ -613,7 +613,7 @@ public class App implements Testable
                         return "1";
 
          }
-	return "0 " + balance;
+	return String.format("0 %.2f", balance);
     }
 
 
