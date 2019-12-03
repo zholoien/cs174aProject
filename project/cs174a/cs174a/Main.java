@@ -41,8 +41,16 @@ public class Main
 			System.out.println( r );
 			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account1", 1234.56, "theTaxID", "Im YoungMing", "Known" );
 			
+						
+
 			System.out.println( r );
 			r=app.createCheckingSavingsAccount(AccountType.SAVINGS, "1234", 1001.99, "1234", "Bob1", "P. Sherman Wollaby, Sydney");
+			System.out.println( r );
+
+			r=app.createCheckingSavingsAccount(AccountType.SAVINGS, "1235", 1001.99, "1234", "Bob1", "P. Sherman Wollaby, Sydney");
+			System.out.println( r );
+
+			r=app.transfer("1235", "account1", 25.0);
 			System.out.println( r );
 
 			r=app.createPocketAccount("1111", "1234", 500.0, "1234");

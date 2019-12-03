@@ -887,6 +887,76 @@ public class App implements Testable
 
 	}
 
+	
+	
+	public String transfer( String from, String to, double amount ){
+	Statement stmt = null;
+	float from_balance = 0, to_balance = 0;
+	if (amount>2000)
+		return "0 Too much money attempting to be transferred";
+	String taxid="";
+	String pin = "";
+	String sql1 = "Select A.taxid, A.pin from ownRelationship A, OwnRelationship B where A.aid = '" +from + "' and B.taxid = A.taxid and B.aid='"+to+"'";
+	String sql2 = "Update Account2 set balance=balance-"+amount+" where aid='"+from+"'";
+	String sql3 = "Update Account2 set balance=balance+"+amount+" where aid='"+to+"'";
+        
+        
+	try{stmt = _connection.createStatement();
+                        ResultSet rs = stmt.executeQuery(sql1);
+			if(rs.next()){
+			    pin = rs.getString("pin");
+			    taxid=rs.getString("taxid");
+			}else{
+				return "0 no Owner in common";
+			}
+	}catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+			return "1";
+                }
+        	
+	if(checkBalance(from, amount)){
+	    if(checkPin(pin)){
+		String sql5 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+from+"'";
+		String sql6 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+to+"'";
+		String sql4 = "Insert INTO Transaction2 " +
+                   "VALUES ('"+from+"', '"+ to+ "', 'transfer', '"+ taxid+"', "+amount+", 'Today')";
+                try{stmt = _connection.createStatement();
+                        stmt.executeUpdate(sql2);
+                        stmt.executeUpdate(sql3);
+                        stmt.executeUpdate(sql4);
+                        ResultSet rs = stmt.executeQuery(sql5);
+			if(rs.next()){
+			    System.out.println("first account");
+			    from_balance = rs.getFloat("balance");
+			}
+			else{
+			    return "1";
+			}ResultSet sr = stmt.executeQuery(sql6);
+			if(sr.next()){
+			    System.out.println("second account");
+			    from_balance = sr.getFloat("balance");
+			}
+			else{
+			    return "1";
+			}
+			
+		}catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        return "1";
+                }		
+	    }
+	    else{
+		return "1";
+	    }
+	}else{
+	    return "1";
+	}
+	
+	
+		return String.format("0 %.2f %.2f", from_balance, to_balance);
+    }
 
 	/**
 	 * Example of one of the testable functions.
