@@ -44,10 +44,10 @@ public class Main
 						
 
 			System.out.println( r );
-			r=app.createCheckingSavingsAccount(AccountType.SAVINGS, "1234", 1001.99, "1234", "Bob1", "P. Sherman Wollaby, Sydney");
+			r=app.createCheckingSavingsAccount(AccountType.SAVINGS, "1234", 1000.0, "1234", "Bob1", "P. Sherman Wollaby, Sydney");
 			System.out.println( r );
 
-			r=app.createCheckingSavingsAccount(AccountType.SAVINGS, "1235", 1001.99, "1234", "Bob1", "P. Sherman Wollaby, Sydney");
+			/*r=app.createCheckingSavingsAccount(AccountType.SAVINGS, "1235", 1001.99, "1234", "Bob1", "P. Sherman Wollaby, Sydney");
 			System.out.println( r );
 
 			r=app.transfer("1235", "account1", 25.0);
@@ -62,11 +62,20 @@ public class Main
 		
 			r = app.setPin("1234");
                         System.out.println(r);
+*/
 
+			r = app.setDate(2011, 3, 21);
+                        System.out.println(r);			
 
-			r = app.withdrawal("1234", 50);
+			r = app.withdrawal("1234", 500);
                         System.out.println(r);
 
+			r = app.setDate(2011, 3, 31);
+                        System.out.println(r);
+
+			r = app.accureInterest("1234");
+                        System.out.println(r);
+/*
 			r = app.showBalance("1234");
                         System.out.println(r);
 
@@ -79,7 +88,7 @@ public class Main
 
 			r = app.purchase("1111", 50);
                         System.out.println(r);
-
+*/
 
 			r=app.dropTables();
 			System.out.println( r );

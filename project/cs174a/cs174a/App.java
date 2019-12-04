@@ -19,6 +19,13 @@ import java.util.Scanner;
  * The most important class for your application.
  * DO NOT CHANGE ITS SIGNATURE.
  */
+class Date
+{
+    public int year; 
+    public int month;  
+    public int day; 
+};
+
 public class App implements Testable
 {
 	private OracleConnection _connection;                   // Example connection object to your DB.
@@ -30,11 +37,16 @@ public class App implements Testable
 	App()
 	{
 		// TODO: Any actions you need.
+		today = new Date ();
+		setDate(2011, 3, 1);
 	}
 
 	/**
 	 * This is an example access operation to the DB.
 	 */
+
+	private Date today;
+
 	void exampleAccessToDB()
 	{
 		// Statement and ResultSet are AutoCloseable and closed automatically.
@@ -95,7 +107,123 @@ public class App implements Testable
 		}
 	}
 
+	public String setDate( int year, int month, int day ){
+		today.year=year;
+		today.month=month;
+		today.day=day;
+		return "0 "+year+" "+month+" "+day;
+	}
+	
+	public String getDate(){
+		return today.year+"-"+today.month+"-"+today.day;
+	}
 
+	public int getDaysInMonth(){
+		switch (today.month){
+			case 1: return 31;
+			case 2: return 28;
+			case 3: return 31;
+			case 4: return 30;
+			case 5: return 31;
+			case 6: return 30;
+			case 7: return 31;
+			case 8: return 31;
+			case 9: return 30;
+			case 10: return 31;
+			case 11: return 30;
+			case 12: return 31;
+		}return 0;
+	}
+
+	public String updateAvgBalance(String id){
+		int days = today.day;
+		String sql1 = "Select A.balance, A.lastTrans, A.avgBalance from Account2 A where A.aid = '" +id + "'";
+		
+		float avg = 0;
+		float balance = 0;
+		String date = getDate();
+		int month = today.month;
+		int day =today.day;
+		
+
+		Statement stmt = null;
+		try{ stmt = _connection.createStatement();
+            		ResultSet rs = stmt.executeQuery(sql1);
+			rs.next();
+			balance=rs.getFloat("balance");
+			avg = rs.getFloat("avgBalance");
+			date=rs.getString("lastTrans");
+			month=Integer.parseInt(date.split("-")[1]);
+			day=Integer.parseInt(date.split("-")[2]);
+			if (month==today.month){
+				days=days-day;
+				System.out.println("It has been "+days+" days");			
+			}avg = avg + (balance*days/(getDaysInMonth()-1));
+			
+			System.out.println("The new average is "+avg);
+			String sql2 = "Update Account2 " +
+                            "set avgBalance = "+ avg +
+                            ", lastTrans = '"+ getDate() +
+                            "' where aid = '" + id + "'";
+			stmt.executeUpdate(sql2);
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+	
+		return "0";
+
+	}
+
+	public String accureInterest(String aid){
+		if (today.day != getDaysInMonth())
+			return "Not the last day of the month";
+
+		
+		String sql1 = "Select A.balance, A.rate, A.avgBalance from Account2 A where A.aid = '" +aid + "'";
+
+		float rate=0;
+		float iBalance=0;
+		float interest=0;
+		float avg=0;
+		String sql2 = "Update Account2 " +
+			    "set balance = balance +" + interest + 
+			    " where aid = '" + aid + "'";
+		Statement stmt = null;
+		try{ stmt = _connection.createStatement();
+            		ResultSet sr = stmt.executeQuery(sql1);
+			if (sr.next()){
+			sr.close();
+			
+			} else return "0 No account exists";
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+		
+		updateAvgBalance(aid);
+		try{ stmt = _connection.createStatement();	
+			ResultSet rs = stmt.executeQuery(sql1);
+			rs.next();
+			
+			iBalance=rs.getFloat("balance");
+			rate = rs.getFloat("rate");
+			avg=rs.getFloat("avgBalance");
+			interest= rate*avg;
+			//System.out.println("avg = "+avg);
+
+			stmt.executeUpdate(sql2);
+			return "0 "+aid+" "+iBalance+" "+(iBalance+interest);
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+	}
 
 	@Override
 	public String createTables(){
@@ -111,7 +239,9 @@ public class App implements Testable
                    " name VARCHAR(255), " + 
 		   " type VARCHAR(255), " + 
 		   " status VARCHAR(255), " + 
+		   " lastTrans VARCHAR(255), " + 
 		   " balance FLOAT, " +  
+		   " avgBalance FLOAT, " +  
 		   " rate FLOAT, " + 
                    " address VARCHAR(255), " + 
 		   " aid VARCHAR(255) not NULL, " + 
@@ -267,7 +397,7 @@ public class App implements Testable
 
 	}
 
-
+	
 
 	public String setPocketPin(String accountID){
 
@@ -341,9 +471,9 @@ public class App implements Testable
 			return "1";
 		double rate=0;
 		if (accountType==AccountType.INTEREST_CHECKING)
-			rate=3.0;
+			rate=.03;
 		else if (accountType==AccountType.SAVINGS)
-			rate=4.8;
+			rate=.048;
 		String pin ="";
                         try{
                                 pin = encrypt("1717", key);
@@ -351,7 +481,7 @@ public class App implements Testable
                            e.printStackTrace();
                         }
 		String sql1 = "INSERT INTO Account2 " +
-                   "VALUES ('"+tin+"', '"+name+"', '"+accountType+"', 'OPEN',"+ initialBalance+", "+rate+", '"+address+"', '"+id+"')";
+                   "VALUES ('"+tin+"', '"+name+"', '"+accountType+"', 'OPEN',"+"'"+getDate()+"', "+ 0+", "+0+", "+rate+", '"+address+"', '"+id+"')";
 		String sql2 = "INSERT INTO OwnRelationship " +
                    "VALUES ('"+tin+"', '"+id+"', '"+pin+"')";
 
@@ -366,7 +496,7 @@ public class App implements Testable
 			return "1";
 		}
 
-
+		deposit(id, initialBalance);
 		return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
 
 	}
@@ -401,6 +531,7 @@ public class App implements Testable
 		    boolean result = checkPin(pin);
 		    
 		    if(result == true){
+			updateAvgBalance(accountID);
 			String sql2 = "Insert into Transaction2 " +
 			    "Values ( '" + accountID + "', 'null', 'deposit','" + rs.getString("taxid") + "', '" + amount + "', 'date')";
 			
@@ -481,7 +612,7 @@ public class App implements Testable
                     if(result == true){
                         String sql2 = "Insert into Transaction2 " +
                             "Values ( '" + accountID + "', 'null', 'withdrawal','" + rs.getString("taxid") + "', '" + amount + "', 'date')";
-
+			updateAvgBalance(accountID);
                         String sql3 = "Update Account2 " +
                             "set balance = balance -" + amount +
                             " where aid = '" + accountID + "'";
@@ -813,6 +944,7 @@ public class App implements Testable
 		try{stmt = _connection.createStatement();			
 			
 			if (checkPin(pin)){
+			updateAvgBalance(parent);
 			stmt.executeUpdate(sql1);
 			stmt.executeUpdate(sql2);
 			stmt.executeUpdate(sql3);
@@ -917,6 +1049,8 @@ public class App implements Testable
         	
 	if(checkBalance(from, amount)){
 	    if(checkPin(pin)){
+		updateAvgBalance(to);
+		updateAvgBalance(from);
 		String sql5 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+from+"'";
 		String sql6 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+to+"'";
 		String sql4 = "Insert INTO Transaction2 " +
