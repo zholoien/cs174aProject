@@ -2,6 +2,7 @@ package cs174a;                         // THE BASE PACKAGE FOR YOUR APP MUST BE
 
 // DO NOT REMOVE THIS IMPORT.
 import cs174a.Testable.*;
+import cs174a.Interface.*;
 
 /**
  * This is the class that launches your application.
@@ -53,7 +54,7 @@ public class Main
 			System.out.println( r );
 
 			*/r=app.createPocketAccount("1111", "1234", 500.0, "1234");
-			//r=app.createPocketAccount("theTaxID", "account1", 500.0, "theTaxID");
+		    //r=app.createPocketAccount("theTaxID", "account1", 500.0, "theTaxID");
 			System.out.println( r );			
 /*
 		        r = app.deposit("1234", 500);
@@ -62,7 +63,7 @@ public class Main
 			r = app.setPin("1234");
                         System.out.println(r);
 */
-
+		    
 			r = app.setDate(2011, 3, 21);
                         System.out.println(r);			
 
@@ -74,20 +75,23 @@ public class Main
 
 			//r = app.accureInterest("1234");
                         //System.out.println(r);
-/*
+
 			r = app.showBalance("1234");
                         System.out.println(r);
 
 			r = app.payFriend("theTaxID", "1111", 250);
                         System.out.println(r);
 
-			r = app.setPocketPin("1111");
-                        System.out.println(r);
+			//r = app.setPocketPin("1111");
+                        //System.out.println(r);
 
 
 			r = app.purchase("1111", 50);
                         System.out.println(r);
-*/
+
+			//app.initInterface();
+			Interface init = new Interface(app);
+		      
 
 			r = app.listClosedAccounts();
 			System.out.println( r );
