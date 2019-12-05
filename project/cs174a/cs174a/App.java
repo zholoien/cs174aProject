@@ -652,6 +652,7 @@ public class App implements Testable
                         return "1";
 
          }
+	conditionalClose(accountID);	
          return "0 " + balance+ " " + newAmount;
 
 
@@ -782,6 +783,7 @@ public class App implements Testable
                         stmt.executeUpdate(sql2);
                         stmt.executeUpdate(sql3);
                         stmt.executeUpdate(sql4);
+			conditionalClose(from);
                         ResultSet rs = stmt.executeQuery(sql5);
 			if(rs.next()){
 			    System.out.println("first account");
@@ -948,6 +950,7 @@ public class App implements Testable
 			stmt.executeUpdate(sql1);
 			stmt.executeUpdate(sql2);
 			stmt.executeUpdate(sql3);
+			conditionalClose(parent);
 			ResultSet rs = stmt.executeQuery(sql4);
 			rs.next();
 			System.out.println(String.format("0 %.2f %.2f", rs.getFloat(1), rs.getFloat(2)));
@@ -1002,6 +1005,7 @@ public class App implements Testable
                         ResultSet rs2 = stmt.executeQuery(sql4);
                         rs2.next();
                         newAmount = rs2.getFloat(1);
+			conditionalClose(accountId);
                         return String.format("0 %.2f %.2f", balance, newAmount);
                         }else
                                 return "1 Incorrect Pin\n";
@@ -1088,17 +1092,66 @@ public class App implements Testable
 	    return "1";
 	}
 	
-	
+		conditionalClose(from);
 		return String.format("0 %.2f %.2f", from_balance, to_balance);
     }
 
+
+
+
+	public String conditionalClose(String aid){
+		String sql1 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+aid+"'";
+		String sql2 = "SELECT a.balance FROM Pocket2 a WHERE a.aid='"+aid+"'";
+		float balance = 0;
+		String sql3 = "Update Account2 set status = 'CLOSED' where aid='"+aid+"'";
+		String sql4 = "Update Pocket2 set status = 'CLOSED' where aid='"+aid+"'";
+		Statement stmt = null;
+		try{stmt = _connection.createStatement();
+			ResultSet rs = stmt.executeQuery(sql1);
+			if(rs.next()){
+			    balance=rs.getFloat("balance");
+				if (balance==0) stmt.executeUpdate(sql3);
+			}else{
+				rs= stmt.executeQuery(sql2);
+				if (rs.next()){
+					balance=rs.getFloat("balance");
+					if (balance==0) stmt.executeUpdate(sql4);
+				}
+			}	
+		}catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        return "1";
+                }
+		return "0";
+	}
 	/**
 	 * Example of one of the testable functions.
 	 */
 	//@Override
 	public String listClosedAccounts()
 	{
-		return "0 it works!";
+		String  builder="0";
+		String sql1 = "SELECT a.aid FROM Account2 a WHERE a.status='CLOSED'";
+		String sql2 = "SELECT a.aid FROM Pocket2 a WHERE a.status='CLOSED'";
+		Statement stmt = null;
+		try{stmt = _connection.createStatement();
+			ResultSet rs = stmt.executeQuery(sql1);
+			while (rs.next()){
+				builder=builder+" "+rs.getString("aid");
+			}
+			rs = stmt.executeQuery(sql2);
+			while (rs.next()){
+				builder=builder+" "+rs.getString("aid");
+			}
+		}catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        return "1";
+                }
+		
+
+		return builder;
 	}
 
 	/**

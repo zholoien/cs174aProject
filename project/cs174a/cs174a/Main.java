@@ -28,8 +28,7 @@ public class Main
 			app.exampleAccessToDB();                // Example on how to connect to the DB.
 
 			// Example tests.  We'll overwrite your Main.main() function with our final tests.
-			r = app.listClosedAccounts();
-			System.out.println( r );
+			
 
 			// Another example test.
 			
@@ -67,14 +66,14 @@ public class Main
 			r = app.setDate(2011, 3, 21);
                         System.out.println(r);			
 
-			r = app.withdrawal("1234", 500);
+			r = app.withdrawal("1234", 1000);
                         System.out.println(r);
 
 			r = app.setDate(2011, 3, 31);
                         System.out.println(r);
 
-			r = app.accureInterest("1234");
-                        System.out.println(r);
+			//r = app.accureInterest("1234");
+                        //System.out.println(r);
 /*
 			r = app.showBalance("1234");
                         System.out.println(r);
@@ -89,6 +88,9 @@ public class Main
 			r = app.purchase("1111", 50);
                         System.out.println(r);
 */
+
+			r = app.listClosedAccounts();
+			System.out.println( r );
 
 			r=app.dropTables();
 			System.out.println( r );
