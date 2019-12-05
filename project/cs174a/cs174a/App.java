@@ -349,20 +349,20 @@ public class App implements Testable
 	}
 
 
-	public String setPin(String accountID){
+	public String setPin(String taxid){
 		
 
 		Statement stmt=null, stmt2=null;
 
-		String sql1 = "Select A.taxid, A.pin from ownRelationship A where A.aid = '" +accountID + "'";	
+		String sql1 = "Select A.pin from ownRelationship A where A.taxid = '" +taxid + "'";	
 		 try{ stmt = _connection.createStatement();
             ResultSet rs = stmt.executeQuery(sql1);
-            while(rs.next() ){
+            if(rs.next() ){
 
-                    String pin = rs.getString("pin");
-                    boolean result = checkPin(pin);
+                    String oldPin = rs.getString("pin");
+                    
 
-                    if(result == true){
+                    //TODO: Check if oldPin matches
 			Scanner in = new Scanner(System.in);
         		System.out.println("Enter New PIN\n");
         		String input = in.nextLine();
@@ -374,7 +374,10 @@ public class App implements Testable
 			}
                         String sql3 = "Update OwnRelationship " +
                             "set pin = '" + newPin +
-                            "' where aid = '" + accountID + "'";
+                            "' where taxid = '" + taxid + "'";
+			String sql4 = "Update PocketOwn " +
+                            "set pin = '" + newPin +
+                            "' where taxid = '" + taxid + "'";
 			try{stmt2 = _connection.createStatement();
                             stmt2.executeUpdate(sql3);
 			    return "0 New Pin Set";
@@ -385,8 +388,8 @@ public class App implements Testable
                         return "1";
 
                 }
-                    }
-                } return "Incorrect Pin";
+                    }return "0 Owner does not exist in our records";
+                
          }catch( SQLException e )
                 {
                         System.err.println( e.getMessage() );
@@ -399,52 +402,7 @@ public class App implements Testable
 
 	
 
-	public String setPocketPin(String accountID){
-
-
-                Statement stmt=null, stmt2=null;
-
-                String sql1 = "Select  A.pin from PocketOwn A where A.aid = '" +accountID + "'";
-                 try{ stmt = _connection.createStatement();
-            ResultSet rs = stmt.executeQuery(sql1);
-            rs.next();
-
-                    String pin = rs.getString("pin");
-                    boolean result = checkPin(pin);
-
-                    if(result == true){
-                        Scanner in = new Scanner(System.in);
-                        System.out.println("Enter New PIN\n");
-                        String input = in.nextLine();
-                        String newPin ="";
-                        try{
-                                newPin = encrypt(input, key);
-                        } catch (Exception e) {
-                           e.printStackTrace();
-                        }
-                        String sql3 = "Update PocketOwn " +
-                            "set pin = '" + newPin +
-                            "' where aid = '" + accountID + "'";
-                        try{stmt2 = _connection.createStatement();
-                            stmt2.executeUpdate(sql3);
-                            return "0 New Pin Set";
-
-                        }catch( SQLException e )
-                {
-                        System.err.println( e.getMessage() );
-                        return "1";
-
-                }
-                    }
-         }catch( SQLException e )
-                {
-                        System.err.println( e.getMessage() );
-                        return "1";
-
-                }
-
-		return "0 PIN not set";
-        }
+	
 
 
 	public static String encrypt(String strClearText,String strKey) throws Exception{
@@ -475,11 +433,24 @@ public class App implements Testable
 		else if (accountType==AccountType.SAVINGS)
 			rate=.048;
 		String pin ="";
+		String sql3 = "Select A.pin from ownRelationship A where A.taxid = '" +tin + "'";
+		try{stmt = _connection.createStatement();		
+			ResultSet rs = stmt.executeQuery(sql3);
+			if (rs.next())
+				pin=rs.getString("pin");
+			else{
                         try{
                                 pin = encrypt("1717", key);
                         } catch (Exception e) {
                            e.printStackTrace();
                         }
+			}
+		}catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        return "1";
+
+                }
 		String sql1 = "INSERT INTO Account2 " +
                    "VALUES ('"+tin+"', '"+name+"', '"+accountType+"', 'OPEN',"+"'"+getDate()+"', "+ 0+", "+0+", "+rate+", '"+address+"', '"+id+"')";
 		String sql2 = "INSERT INTO OwnRelationship " +
@@ -827,18 +798,12 @@ public class App implements Testable
 	@Override
 	public String createPocketAccount( String id, String linkedId, double initialTopUp, String tin ){
 		Statement stmt = null;	
-		String pin ="";
-                        try{
-                                pin = encrypt("1717", key);
-                        } catch (Exception e) {
-                           e.printStackTrace();
-                        }
+		
 
 		String sql1 = "select R.pin from OwnRelationship R where R.aid='"+linkedId+"' and R.taxid='"+tin+"'";		
 		String sql2= "INSERT INTO Pocket2 " +
 		"VALUES ('"+tin+"', 'OPEN', "+ 0.0+", '"+linkedId+"', '"+id+"')";
-		String sql3 = "INSERT INTO PocketOwn " +
-                   "VALUES ('"+tin+"', '"+id+"', '"+pin +"')";
+		
 		
 		
 		if (checkBalance(linkedId, initialTopUp)==false)
@@ -847,6 +812,12 @@ public class App implements Testable
 		try{stmt = _connection.createStatement();	
 			ResultSet rs = stmt.executeQuery(sql1);
 			if (rs.next()){
+
+				String pin=rs.getString("pin");
+				String sql3 = "INSERT INTO PocketOwn " +
+                   "VALUES ('"+tin+"', '"+id+"', '"+pin +"')";
+
+
 				stmt.executeUpdate(sql2);
 //				System.out.println("Trying to add Pocket Account");
 				stmt.executeUpdate(sql3);
