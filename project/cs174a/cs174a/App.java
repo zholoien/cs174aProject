@@ -30,6 +30,8 @@ public class App implements Testable
 {
 	private OracleConnection _connection;                   // Example connection object to your DB.
 	private String key="databasePinKey";
+	private int nextTransKey;
+	private int nextKey(){ return ++nextTransKey;}
 	/**
 	 * Default constructor.
 	 * DO NOT REMOVE.
@@ -177,7 +179,7 @@ public class App implements Testable
 
 	}
 
-	public String accureInterest(String aid){
+	public String accureInterest(String aid, String taxid){
 		if (today.day != getDaysInMonth())
 			return "Not the last day of the month";
 
@@ -188,16 +190,14 @@ public class App implements Testable
 		float iBalance=0;
 		float interest=0;
 		float avg=0;
-		String sql2 = "Update Account2 " +
-			    "set balance = balance +" + interest + 
-			    " where aid = '" + aid + "'";
+		
 		Statement stmt = null;
 		try{ stmt = _connection.createStatement();
             		ResultSet sr = stmt.executeQuery(sql1);
 			if (sr.next()){
 			sr.close();
 			
-			} else return "0 No account exists";
+			} else {System.out.println("No Account exists");return "0 No account exists";}
 		}catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
@@ -213,9 +213,14 @@ public class App implements Testable
 			rate = rs.getFloat("rate");
 			avg=rs.getFloat("avgBalance");
 			interest= rate*avg;
-			//System.out.println("avg = "+avg);
-
+			System.out.println("interest = "+interest);
+			String sql2 = "Update Account2 " +
+			    "set balance = balance +" + interest + 
+			    " where aid = '" + aid + "'";
 			stmt.executeUpdate(sql2);
+			String sql3 = "Insert into Transaction2 " +
+                            "Values ( '" + aid + "', 'null', 'accure-interest','" + taxid + "', '" + interest + "', '"+getDate()+"', '"+nextKey()+"')";
+			stmt.executeUpdate(sql3);
 			return "0 "+aid+" "+iBalance+" "+(iBalance+interest);
 		}catch( SQLException e )
 		{
@@ -263,9 +268,10 @@ public class App implements Testable
 		    "ownid Varchar(255) not Null, " +
 		    "Amount float not null, " +
 		    "t_date varchar(255) not null, " +
+		    "t_key varchar(16) not null, " +
 		    " Constraint FK_acc1 foreign key (account1) references Account2(aid) on delete cascade," +
 		    " Constraint FK_ownT foreign key (ownid) references Owner2(taxid) on delete cascade," +
-		    " Primary Key (account1, t_date, trans_type))";
+		    " Primary Key (t_key))";
 
 
 		String sql5 = "CREATE TABLE  Pocket2" +
@@ -453,7 +459,7 @@ public class App implements Testable
                 }
 		String sql1 = "INSERT INTO Account2 " +
                    "VALUES ('"+tin+"', '"+name+"', '"+accountType+"', 'OPEN',"+"'"+getDate()+"', "+ 0+", "+0+", "+rate+", '"+address+"', '"+id+"')";
-		String sql2 = "INSERT INTO OwnRelationship " +  "VALUES ('"+tin+"', '"+id+"', '1717')";
+		String sql2 = "INSERT INTO OwnRelationship " +  "VALUES ('"+tin+"', '"+id+"', '"+pin+"')";
 		    /*"VALUES ('"+tin+"', '"+id+"', '"+pin+"')";*/
 
 		try{stmt = _connection.createStatement();			
@@ -478,12 +484,14 @@ public class App implements Testable
 	Statement stmt = null, stmt2 = null, stmt3 = null;
 	float balance = 0, newAmount = 0;
 	boolean flag = true;
+	String taxid="";
         String sql1 = "Select A.taxid, A.pin from ownRelationship A where A.aid = '" +accountID + "'";
-	String sql4 = "Select A.balance from Account2 A where A.aid = '" +accountID + "'";
+	String sql4 = "Select A.taxid, A.balance from Account2 A where A.aid = '" +accountID + "'";
 	try{stmt =  _connection.createStatement();
 	    ResultSet sr = stmt.executeQuery(sql4);
 	     if(sr.next()){
 		balance = sr.getFloat("Balance");
+		taxid=sr.getString("taxid");
 	        
 		}
 	}catch( SQLException e )
@@ -496,15 +504,11 @@ public class App implements Testable
 	
 	 try{ stmt = _connection.createStatement();
 	    ResultSet rs = stmt.executeQuery(sql1);
-	    while(rs.next() && flag){
+	    if(rs.next() && flag){
 		
-		    String pin = rs.getString("pin");
-		    boolean result = true;
-		    
-		    if(result == true){
 			updateAvgBalance(accountID);
 			String sql2 = "Insert into Transaction2 " +
-			    "Values ( '" + accountID + "', 'null', 'deposit','" + rs.getString("taxid") + "', '" + amount + "', 'date')";
+			    "Values ( '" + accountID + "', 'null', 'deposit','" + taxid + "', '" + amount + "', '"+getDate()+"', '"+nextKey()+"')";
 			
 			String sql3 = "Update Account2 " +
 			    "set balance = balance +" + amount + 
@@ -521,8 +525,8 @@ public class App implements Testable
 			return "1";
 			    
 		}
-		    }
-		}
+		    
+		}else System.out.println("Account does not exist");
 	 }catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
@@ -557,13 +561,14 @@ public class App implements Testable
 			return "0 Insuffiecient Funds";
 		float balance = 0, newAmount = 0;
         	boolean flag = true;
+		String taxid="";
         	String sql1 = "Select A.taxid, A.pin from ownRelationship A where A.aid = '" +accountID + "'";
-        	String sql4 = "Select A.balance from Account2 A where A.aid = '" +accountID + "'";
+        	String sql4 = "Select A.balance, A.taxid from Account2 A where A.aid = '" +accountID + "'";
         	try{stmt =  _connection.createStatement();
             		ResultSet sr = stmt.executeQuery(sql4);
              		if(sr.next()){
                 		balance = sr.getFloat("Balance");
-
+				taxid=sr.getString("taxid");
                 	}
         	}catch( SQLException e )
             	{
@@ -575,14 +580,11 @@ public class App implements Testable
 
 		try{ stmt = _connection.createStatement();
             ResultSet rs = stmt.executeQuery(sql1);
-            while(rs.next() && flag){
+            if(rs.next() && flag){
 
-                    String pin = rs.getString("pin");
-                    boolean result = true;
-
-                    if(result == true){
+                    
                         String sql2 = "Insert into Transaction2 " +
-                            "Values ( '" + accountID + "', 'null', 'withdrawal','" + rs.getString("taxid") + "', '" + amount + "', 'date')";
+                            "Values ( '" + accountID + "', 'null', 'withdrawal','" + taxid + "', '" + amount + "', '"+getDate()+"', '"+nextKey()+"')";
 			updateAvgBalance(accountID);
                         String sql3 = "Update Account2 " +
                             "set balance = balance -" + amount +
@@ -599,8 +601,89 @@ public class App implements Testable
                         return "1";
 
                 }
-                    }
+                    
+                }else System.out.println("Account does not exist");
+         }catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        return "1";
+
                 }
+
+
+        String sql5 = "Select A.balance from Account2 A where A.aid = '" +accountID + "'";
+        try{stmt =  _connection.createStatement();
+            ResultSet sr = stmt.executeQuery(sql4);
+             if(sr.next()){
+                newAmount = sr.getFloat("Balance");
+
+                }
+        }catch( SQLException e )
+            {
+                        System.err.println( e.getMessage() );
+                        flag = false;
+                        return "1";
+
+         }
+	conditionalClose(accountID);	
+         return "0 " + balance+ " " + newAmount;
+
+
+
+		
+
+
+	}
+
+	public String writeCheck(String accountID, double amount ){
+		Statement stmt=null, stmt2 =null;
+		if (checkBalance(accountID, amount)==false)
+			return "0 Insuffiecient Funds";
+		float balance = 0, newAmount = 0;
+        	boolean flag = true;
+		String taxid="";
+        	String sql1 = "Select A.taxid, A.pin from ownRelationship A where A.aid = '" +accountID + "'";
+        	String sql4 = "Select A.taxid, A.balance from Account2 A where A.aid = '" +accountID + "'";
+        	try{stmt =  _connection.createStatement();
+            		ResultSet sr = stmt.executeQuery(sql4);
+             		if(sr.next()){
+                		balance = sr.getFloat("Balance");
+				taxid=sr.getString("taxid");
+
+                	}
+        	}catch( SQLException e )
+            	{
+                        System.err.println( e.getMessage() );
+                        flag = false;
+                        return "1";
+
+         	}
+
+		try{ stmt = _connection.createStatement();
+            ResultSet rs = stmt.executeQuery(sql1);
+            if(rs.next() && flag){
+
+                    
+                        String sql2 = "Insert into Transaction2 " +
+                            "Values ( '" + accountID + "', 'null', 'write-check','" + rs.getString("taxid") + "', '" + amount + "', '"+getDate()+"', '"+nextKey()+"')";
+			updateAvgBalance(accountID);
+                        String sql3 = "Update Account2 " +
+                            "set balance = balance -" + amount +
+                            " where aid = '" + accountID + "'";
+
+                        try{stmt2 = _connection.createStatement();
+                            stmt2.executeUpdate(sql2);
+                            stmt2.executeUpdate(sql3);
+                            flag = false;
+                        }catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        flag = false;
+                        return "1";
+
+                }
+                    
+                }else System.out.println("Account does not exist");
          }catch( SQLException e )
                 {
                         System.err.println( e.getMessage() );
@@ -657,11 +740,11 @@ public class App implements Testable
 	String input = scan.nextLine();
 	System.out.println("Pin:" + pin + " <-");
 	try{
-	    enteredPin = encrypt(pin, key);
+	    enteredPin = encrypt(input, key);
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
-	if(input.equals(pin)){
+	if(pin.equals(enteredPin)){
 	    return true;
 	}
 	else{
@@ -733,6 +816,7 @@ public class App implements Testable
                         return "1";
 
          }
+	System.out.println(String.format("%.2f", balance));
 	return "0 " + balance;
     }
 
@@ -1024,6 +1108,7 @@ public class App implements Testable
 			    pin = rs.getString("pin");
 			    taxid=rs.getString("taxid");
 			}else{
+				System.out.println("Cannot Transfer; No Common Owner between Accounts");
 				return "0 no Owner in common";
 			}
 	}catch( SQLException e )
@@ -1038,7 +1123,7 @@ public class App implements Testable
 		String sql5 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+from+"'";
 		String sql6 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+to+"'";
 		String sql4 = "Insert INTO Transaction2 " +
-                   "VALUES ('"+from+"', '"+ to+ "', 'transfer', '"+ taxid+"', "+amount+", 'Today')";
+                   "VALUES ('"+from+"', '"+ to+ "', 'transfer', '"+ taxid+"', "+amount+", '"+getDate()+"', '"+nextKey()+"')";
                 try{stmt = _connection.createStatement();
                         stmt.executeUpdate(sql2);
                         stmt.executeUpdate(sql3);
@@ -1074,6 +1159,79 @@ public class App implements Testable
 
 
 
+	public String wire( String from, String to, double amount, String taxid ){
+	Statement stmt = null;
+	float from_balance = 0, to_balance = 0;
+	
+	
+	String pin = "";
+	String sql1 = "Select A.taxid, A.pin from ownRelationship A, OwnRelationship B where A.aid = '" +from + "' and B.taxid = A.taxid and B.aid='"+to+"'";
+	String sql2 = "Update Account2 set balance=balance-"+amount+" where aid='"+from+"'";
+	String sql3 = "Update Account2 set balance=balance+"+(amount*.98)+" where aid='"+to+"'";
+        
+        
+	
+        	
+	if(checkBalance(from, amount)){
+		updateAvgBalance(to);
+		updateAvgBalance(from);
+		String sql5 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+from+"'";
+		String sql6 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+to+"'";
+		String sql4 = "Insert INTO Transaction2 " +
+                   "VALUES ('"+from+"', '"+ to+ "', 'wire', '"+ taxid+"', "+amount+", '"+getDate()+"', '"+nextKey()+"')";
+                try{stmt = _connection.createStatement();
+                        stmt.executeUpdate(sql2);
+                        stmt.executeUpdate(sql3);
+                        stmt.executeUpdate(sql4);
+                        ResultSet rs = stmt.executeQuery(sql5);
+			if(rs.next()){
+			    System.out.println("first account");
+			    from_balance = rs.getFloat("balance");
+			}
+			else{
+			    return "1";
+			}ResultSet sr = stmt.executeQuery(sql6);
+			if(sr.next()){
+			    System.out.println("second account");
+			    from_balance = sr.getFloat("balance");
+			}
+			else{
+			    return "1";
+			}
+			
+		}catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+                        return "1";
+                }		
+	}else{
+	    return "1";
+	}
+	
+		conditionalClose(from);
+		return String.format("0 %.2f %.2f", from_balance, to_balance);
+    }
+
+
+
+	public String requestTransfer(String from, String to, String taxid, double amount){
+		String sql1 = "Select A.pin from ownRelationship A where A.aid = '" +from + "' and A.taxid = '"+taxid+"'";
+		Statement stmt = null;
+		try{stmt = _connection.createStatement();
+                        ResultSet rs = stmt.executeQuery(sql1);
+			if(rs.next()){
+			    transfer(from, to, amount);
+			}else{
+				System.out.println("0 Cannot request from this account");
+			}
+	}catch( SQLException e )
+                {
+                        System.err.println( e.getMessage() );
+			return "1";
+                }
+		return "0";
+
+	}
 
 	public String conditionalClose(String aid){
 		String sql1 = "SELECT a.balance FROM Account2 a WHERE a.aid='"+aid+"'";
@@ -1152,6 +1310,38 @@ public class App implements Testable
 
 	
     }
+    public boolean checkClosed(String aid){
+	String sql1 = "SELECT a.status FROM Account2 a WHERE a.aid='"+aid+"'";
+	String sql2 = "SELECT a.status FROM Pocket2 a WHERE a.aid='"+aid+"'";
+	Statement stmt = null;
+	try{stmt = _connection.createStatement();
+	    ResultSet rs = stmt.executeQuery(sql1);
+	    if (rs.next()){
+		if (rs.getString("status").equals("CLOSED"))
+			return true;
+		else
+			return false;
+	    }else{
+		rs = stmt.executeQuery(sql2);
+	    if (rs.next()){
+		if (rs.getString("status").equals("CLOSED"))
+			return true;
+		else
+			return false;
+	    }
+
+		}
+	}catch( SQLException e )
+	    {
+		    System.err.println( e.getMessage() );
+	    }
+	
+
+
+	return false;
+    }
+
+
 
     public String getAccountType(String accountId){
 	Statement stmt = null;
