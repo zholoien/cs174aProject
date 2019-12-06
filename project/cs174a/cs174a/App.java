@@ -137,6 +137,23 @@ public class App implements Testable
 		}return 0;
 	}
 
+    	public String getMonth(){
+		switch (today.month){
+			case 1: return "January";
+			case 2: return "February";
+			case 3: return "March";
+			case 4: return "April";
+			case 5: return "May";
+			case 6: return "June";
+			case 7: return "July";
+			case 8: return "August";
+			case 9: return "September";
+			case 10: return "October";
+			case 11: return "November";
+			case 12: return "December";
+		}return "";
+	}
+
 	public String updateAvgBalance(String id){
 		int days = today.day;
 		String sql1 = "Select A.balance, A.lastTrans, A.avgBalance from Account2 A where A.aid = '" +id + "'";
@@ -249,7 +266,8 @@ public class App implements Testable
 		   " avgBalance FLOAT, " +  
 		   " rate FLOAT, " + 
                    " address VARCHAR(255), " + 
-		   " aid VARCHAR(255) not NULL, " + 
+		   " aid VARCHAR(255) not NULL, " +
+		    " init_bala FLOAT, " +
 		   " CONSTRAINT FK_PrimaryOwner FOREIGN KEY (taxid) REFERENCES Owner2(taxid) on delete cascade," +
                    " PRIMARY KEY ( aid ))";
 
@@ -279,7 +297,8 @@ public class App implements Testable
                    " status VARCHAR(255), " + 
 		   " balance FLOAT, " +
 		   " parent_aid VARCHAR(255) not NULL, " +  
-		   " aid VARCHAR(255) not NULL, " + 
+		   " aid VARCHAR(255) not NULL, " +
+		   " init_bal FLOAT," +
 		   " CONSTRAINT FK_ParentAccount FOREIGN KEY (parent_aid) REFERENCES Account2(aid) on delete cascade," +
 		   " CONSTRAINT FK_PocketOwner FOREIGN KEY (taxid) REFERENCES Owner2(taxid) on delete cascade," +
                    " PRIMARY KEY ( aid ))";
@@ -458,7 +477,7 @@ public class App implements Testable
 
                 }
 		String sql1 = "INSERT INTO Account2 " +
-                   "VALUES ('"+tin+"', '"+name+"', '"+accountType+"', 'OPEN',"+"'"+getDate()+"', "+ 0+", "+0+", "+rate+", '"+address+"', '"+id+"')";
+                   "VALUES ('"+tin+"', '"+name+"', '"+accountType+"', 'OPEN',"+"'"+getDate()+"', "+ 0+", "+0+", "+rate+", '"+address+"', '"+id+"',"+0.0+")";
 		String sql2 = "INSERT INTO OwnRelationship " +  "VALUES ('"+tin+"', '"+id+"', '"+pin+"')";
 		    /*"VALUES ('"+tin+"', '"+id+"', '"+pin+"')";*/
 
@@ -899,7 +918,7 @@ public class App implements Testable
 
 		String sql1 = "select R.pin from OwnRelationship R where R.aid='"+linkedId+"' and R.taxid='"+tin+"'";		
 		String sql2= "INSERT INTO Pocket2 " +
-		"VALUES ('"+tin+"', 'OPEN', "+ 0.0+", '"+linkedId+"', '"+id+"')";
+		"VALUES ('"+tin+"', 'OPEN', "+ 0.0+", '"+linkedId+"', '"+id+"', "+0.0+")";
 		
 		
 		
@@ -1365,6 +1384,113 @@ public class App implements Testable
 	return "";
 	
     }
+
+    public void generateMonthlyStatement(String taxid){
+	boolean hasPocket = false;
+	double finbalance = 0.00, pocketbal = 0.00, initbalCheck = 0.00, initbalPocket = 0.00;
+	String aid = "", address = "", name = "";
+	if (today.day == getDaysInMonth()){
+	    Statement stmt = null;
+	    String sql1 = "SELECT * FROM transaction2 a WHERE a.ownid='"+taxid+"'";
+	    String sql3 = "SELECT a.aid FROM pocket2 a WHERE a.taxid='"+ taxid+"'";
+	    String sql4 = "SELECT a.address, a.name FROM account2 a WHERE a.taxid='"+ taxid+"'";
+	    String sql6 = "SELECT a.init_bala, a.balance FROM account2 a WHERE a.taxid='"+ taxid+"'";
+	    String sql7 = "SELECT b.init_bal, b.balance FROM Pocket2 b WHERE b.taxid='"+ taxid+"'";
+	    try{stmt = _connection.createStatement();
+		ResultSet rs = stmt.executeQuery(sql6);
+		if(rs.next()){
+		    finbalance = rs.getDouble("balance");
+		    initbalCheck = rs.getDouble("init_bala");
+		    
+		}
+		rs = stmt.executeQuery(sql7);
+		if(rs.next()){
+		    pocketbal = rs.getDouble("balance");
+		    initbalPocket = rs.getDouble("init_bal");
+		    
+		}
+	    }catch( SQLException e )
+		{
+		    System.err.println( e.getMessage() );
+		}
+
+
+
+
+
+	    
+	    try{stmt = _connection.createStatement();
+		ResultSet rs = stmt.executeQuery(sql3);
+		if(rs.next()){
+		    aid = rs.getString("aid");
+		    
+		    hasPocket = true;
+		}
+	    }catch( SQLException e )
+		{
+		    System.err.println( e.getMessage() );
+		}
+	    
+	    try{stmt = _connection.createStatement();
+		ResultSet rs = stmt.executeQuery(sql4);
+		if(rs.next()){
+		    name = rs.getString("name");
+		    System.out.println(today.day + " " + getDaysInMonth());
+		    address = rs.getString("address");
+		    System.out.println("Monthly Statement for the Month of " + getMonth() + " " + today.year);
+		    System.out.println("Owner: " + name + ", Address: "+ address);
+		}
+	    }catch( SQLException e )
+		{
+		    System.err.println( e.getMessage() );
+		}
+	
+
+	
+	    String sql2 = "SELECT * FROM PocketTransaction a WHERE a.aid='"+aid+"'";
+	    try{stmt = _connection.createStatement();
+		ResultSet rs = stmt.executeQuery(sql1);
+		System.out.println("Transactions Made on Checking/Savings Account:");
+		while (rs.next()){
+		    
+		    System.out.println("Transaction Type: " + rs.getString("trans_type")+ " " + ", From Account: " + rs.getString("account1") + " " + ", To Account: (May be NULL) "+ rs.getString("account2") + ", On the Date: " + rs.getString("t_date"));
+		}
+		System.out.println("Initial Amount for CheckingSavings Account: " + initbalCheck+ ", Final Balance: "+ finbalance);
+    
+		if (hasPocket){
+		rs = stmt.executeQuery(sql2);
+		System.out.println("Transactions made on Pocket Account:");
+		while (rs.next()){
+		    System.out.println("Transaction Type: " + rs.getString("t_type")+ ", From Account: " + rs.getString("aid") + " " + ", To Account: (May be NULL) "+ rs.getString("aid2") + ", On the Date: " + rs.getString("t_date"));
+		}
+		System.out.println("Initial Amount for Pocket Account: "+ initbalPocket+ ", Final Balance: "+ pocketbal);
+		}
+
+		if((finbalance + pocketbal) > 100000.00){
+		    System.out.println("Limit of the insurance has been reached");
+		}
+	    }catch( SQLException e )
+		{
+		    System.err.println( e.getMessage() );
+		}
+
+
+
+
+
+
+
+
+
+	    
+	}
+	else{
+	    System.out.println("Cannot generate Monthly Statement as it is not the last day of the month");
+	}
+
+	
+    }
+
 
 	/**
 	 * Another example.

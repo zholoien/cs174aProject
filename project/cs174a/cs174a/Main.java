@@ -87,11 +87,11 @@ public class Main
 
 
 			r = app.purchase("1111", 50);
-                        System.out.println(r);
+                        System.out.println(r + "Hello");
 
 			//app.initInterface();
-			Interface init = new Interface(app);
-		      
+			//Interface init = new Interface(app);
+			app.generateMonthlyStatement("1234");
 
 			r = app.listClosedAccounts();
 			System.out.println( r );
