@@ -91,8 +91,8 @@ public class Main
 
 			//app.initInterface();
 			//Interface init = new Interface(app);
-			app.generateMonthlyStatement("1234");
-
+			//app.generateMonthlyStatement("1234");
+			app.dter();
 			r = app.listClosedAccounts();
 			System.out.println( r );
 

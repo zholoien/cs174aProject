@@ -1492,6 +1492,36 @@ public class App implements Testable
     }
 
 
+
+    public void dter(){
+	Statement stmt = null;
+	int count = 0;
+	String sql1 = "Select SUM(t.amount), o.taxid FROM Owner2 o, Transaction2 t WHERE t.ownid = o.taxid AND (t.trans_type = 'deposit' OR t.trans_type = 'wire' OR t.trans_type = 'transfer') GROUP BY o.taxid";
+	try{stmt = _connection.createStatement();
+	    System.out.println("Government Drug and Tax Evasion Report (DTER) \nListed Below are the Tax IDs of those whose Transfer Deposit and Wire sum is greater than $10,000");
+	    ResultSet rs = stmt.executeQuery(sql1);
+	    while(rs.next()){
+		double sum = rs.getDouble(1);
+		System.out.println(sum);
+		if (sum > 10000){
+		    count++;
+		    System.out.println(count + ". " + rs.getString("taxid"));
+		}
+		    
+	    }
+	    if (count == 0){
+		System.out.println("No such record exists in our System");
+	    }
+	    
+	}catch( SQLException e )
+	    {
+		System.err.println( e.getMessage() );
+	    }
+	
+	
+    }
+
+
 	/**
 	 * Another example.
 	 */
