@@ -82,6 +82,9 @@ public class Main
 			r = app.payFriend("theTaxID", "1111", 250);
                         System.out.println(r);
 
+			//r = app.resetInitialBalance();
+                        //System.out.println(r);
+
 			//r = app.setPocketPin("1111");
                         //System.out.println(r);
 
@@ -89,8 +92,8 @@ public class Main
 			r = app.purchase("1111", 50);
                         System.out.println(r + "Hello");
 
-			//app.initInterface();
-			//Interface init = new Interface(app);
+			
+			Interface init = new Interface(app);
 			//app.generateMonthlyStatement("1234");
 			app.dter();
 			r = app.listClosedAccounts();

@@ -238,6 +238,11 @@ public class App implements Testable
 			String sql3 = "Insert into Transaction2 " +
                             "Values ( '" + aid + "', 'null', 'accure-interest','" + taxid + "', '" + interest + "', '"+getDate()+"', '"+nextKey()+"')";
 			stmt.executeUpdate(sql3);
+
+			String sql4 = "Update Account2 " +
+                            "set avgBalance = "+ 0 +
+                            " where aid = '" + aid + "'";
+			stmt.executeUpdate(sql4);
 			return "0 "+aid+" "+iBalance+" "+(iBalance+interest);
 		}catch( SQLException e )
 		{
@@ -245,6 +250,93 @@ public class App implements Testable
 			return "1";
 		}
 
+	}
+	
+	public String resetAccount(String accountID, float balance){
+		String sql2 = "Update Account2 " +
+			    "set init_bala = " + balance + 
+			    " where aid = '" + accountID + "'";	
+		Statement stmt=null;
+		try{stmt=_connection.createStatement();
+			stmt.executeUpdate(sql2);	
+
+		
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+		return "0 Reset completed";	
+
+	}
+	
+
+	public String resetPocket(String accountID, float balance){
+		String sql2 = "Update Pocket2 " +
+			    "set init_bal = " + balance + 
+			    " where aid = '" + accountID + "'";	
+		Statement stmt=null;
+		try{stmt=_connection.createStatement();
+			stmt.executeUpdate(sql2);	
+
+		
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+		return "0 Reset completed";	
+
+	}
+	public String resetInitialBalance(){
+		String sql1 = "SELECT aid, balance from Account2"; 
+		String sql3 = "SELECT aid, balance from Pocket2";
+		Statement stmt=null;
+		try{stmt=_connection.createStatement();
+			ResultSet rs= stmt.executeQuery(sql1);
+			while (rs.next()){
+				
+				Float balance=rs.getFloat("balance");
+				String accountID = rs.getString("aid"); 
+				resetAccount(accountID, balance);
+
+			}
+			rs.close();
+			ResultSet sr = stmt.executeQuery(sql3);
+			while (sr.next()){
+				Float balance=sr.getFloat("balance");
+				String accountID = sr.getString("aid"); 
+				resetPocket(accountID, balance);
+
+			}
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+		return "0 Reset completed";
+	}
+
+	public String addInterest(){
+		String sql1 = "SELECT aid, taxid from Account2";
+		if (today.day!=getDaysInMonth()){
+			System.out.println("Not the last Day of The Month");		
+			return "0 Not last day of month";
+		}Statement stmt=null;
+		try{stmt=_connection.createStatement();
+			ResultSet rs= stmt.executeQuery(sql1);
+			while (rs.next())
+				accureInterest(rs.getString("aid"), rs.getString("taxid"));				
+
+
+		}catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+
+		return "0";
 	}
 
 	@Override
@@ -1455,7 +1547,7 @@ public class App implements Testable
 		    
 		    System.out.println("Transaction Type: " + rs.getString("trans_type")+ " " + ", From Account: " + rs.getString("account1") + " " + ", To Account: (May be NULL) "+ rs.getString("account2") + ", On the Date: " + rs.getString("t_date"));
 		}
-		System.out.println("Initial Amount for CheckingSavings Account: " + initbalCheck+ ", Final Balance: "+ finbalance);
+		System.out.println(String.format("Initial Amount for CheckingSavings Account: %.2f, Final Balance: %.2f", initbalCheck, finbalance));
     
 		if (hasPocket){
 		rs = stmt.executeQuery(sql2);
@@ -1463,7 +1555,7 @@ public class App implements Testable
 		while (rs.next()){
 		    System.out.println("Transaction Type: " + rs.getString("t_type")+ ", From Account: " + rs.getString("aid") + " " + ", To Account: (May be NULL) "+ rs.getString("aid2") + ", On the Date: " + rs.getString("t_date"));
 		}
-		System.out.println("Initial Amount for Pocket Account: "+ initbalPocket+ ", Final Balance: "+ pocketbal);
+		System.out.println(String.format("Initial Amount for Pocket Account: %.2f, Final Balance: %.2f", initbalPocket, pocketbal));
 		}
 
 		if((finbalance + pocketbal) > 100000.00){

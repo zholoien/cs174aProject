@@ -312,7 +312,7 @@ public class Interface
 
 	
     }
-
+	
     private void bankTellerInterface(){
 	System.out.println("Welcome to Bank Teller. Please Enter a number for an Action");
 	while(true){
@@ -320,7 +320,7 @@ public class Interface
 	    System.out.println("2. Generate Monthly Statement");
 	    System.out.println("3. List Closed Accounts");
 	    System.out.println("4. Generate Government Drug and Tax Evasion Report (DTER)");
-	    System.out.println("5. Customer Report");
+	    System.out.println("5. Reset Initial Monthly Balances");
 	    System.out.println("6. Add Interest");
 	    System.out.println("7. Create Account");
 	    System.out.println("8. Delete Closed Accounts and Customers");
@@ -332,9 +332,26 @@ public class Interface
 		break;
 	    }
 	    switch (choice) {
+	    case "2":
+		System.out.println("Enter the TaxId of the monthly statement to generate");
+	     	String taxid = scan.nextLine();
+		app.generateMonthlyStatement(taxid);
+		break;
 	    case "3":
 		System.out.println("Closed Accounts:");
 		app.listClosedAccounts();
+		break;
+	    case "4":
+		//System.out.println("Adding Interest to all Accounts:");
+		app.dter();
+		break;
+	    case "5":
+		//System.out.println("Adding Interest to all Accounts:");
+		app.resetInitialBalance();
+		break;
+	    case "6":
+		System.out.println("Adding Interest to all Accounts:");
+		app.addInterest();
 		break;
 		 
 	    }
